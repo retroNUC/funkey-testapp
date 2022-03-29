@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=funkey-testapp
+Comment=Test Application
+Exec=funkey-testapp
+Icon=icon
+Terminal=false
+Categories=apps
