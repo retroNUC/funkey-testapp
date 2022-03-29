@@ -4,7 +4,7 @@
 #include <signal.h> // ** INSTANT RELOAD INTEGRATION ** - Ability to check for SIGUSR1 (console closed)
 
 
-#include "sdl-menu.h"
+#include "funkey/sdl-menu.h"
 
 // Global Variable
 int should_quick_save = 0;
