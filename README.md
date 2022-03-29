@@ -1,1 +1,3 @@
 A test application for the FunKey development environment, learning how compilation and feature integration works.
+
+**WARNING** Probably doesn't compile right now, makefile is empty, etc...
