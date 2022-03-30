@@ -3,11 +3,15 @@
 
 #include <signal.h> // ** INSTANT RELOAD INTEGRATION ** - Ability to check for SIGUSR1 (console closed)
 
-
 #include "funkey/sdl-menu.h"
 
 // Global Variable
 int should_quick_save = 0;
+
+// MENU INTEGRATION - The global variable with the emu/app's currently selected
+// save slot, and directly referenced throughout the gnuboy version of sdl-menu.
+// TODO - Pass a pointer to this on initialization if save/load is available!
+int saveslot = 0;
 
 // ** INSTANT RELOAD INTEGRATION **
 void handle_sigusr1(int sig)
