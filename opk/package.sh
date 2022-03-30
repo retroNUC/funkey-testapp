@@ -7,8 +7,8 @@ echo ${BIN_NAME}
 echo ${OPK_NAME}
 
 # strip executable
-cp ../a.out ${BIN_NAME}
-#${STRIP} ${BIN_NAME}
+cp ../build/${BIN_NAME} ${BIN_NAME}
+${STRIP} ${BIN_NAME}
 
 # create opk
 rm -f ${OPK_NAME}
