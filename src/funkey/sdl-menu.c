@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <unistd.h>     /* Used for running shell scripts via execlp */
 
 #include <SDL/SDL.h>
 #include <SDL/SDL_ttf.h>
@@ -25,7 +25,7 @@
 /// -------------- DEFINES --------------
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
-#define ABS(x) (((x) < 0) ? (-x) : (x))
+#define ABS(x) (((x) < 0) ? (-x) : (x))     /* UNUSED */
 
 //#define MENU_DEBUG
 #define MENU_ERROR
@@ -45,10 +45,10 @@
 
 #define SCROLL_SPEED_PX             30
 #define FPS_MENU                    50
-#define ARROWS_PADDING              8
+#define ARROWS_PADDING              8                           /* UNUSED - Determined from MENU_BG_SQUARE_HEIGHT */
 
-#define MENU_ZONE_WIDTH             SCREEN_HORIZONTAL_SIZE
-#define MENU_ZONE_HEIGHT            SCREEN_VERTICAL_SIZE
+#define MENU_ZONE_WIDTH             SCREEN_HORIZONTAL_SIZE      /* From RES_HW_SCREEN_HORIZONTAL in header */
+#define MENU_ZONE_HEIGHT            SCREEN_VERTICAL_SIZE        /* From RES_HW_SCREEN_VERTICAL in header */
 #define MENU_BG_SQUARE_WIDTH        180
 #define MENU_BG_SQUARE_HEIGHT       140
 
@@ -62,28 +62,21 @@
 #define MENU_PNG_ARROW_TOP_PATH     "/usr/games/menu_resources/arrow_top.png"
 #define MENU_PNG_ARROW_BOTTOM_PATH  "/usr/games/menu_resources/arrow_bottom.png"
 
-#define GRAY_MAIN_R                 85
+#define GRAY_MAIN_R                 85                          /* GRAY elements are text and progress bars */
 #define GRAY_MAIN_G                 85
 #define GRAY_MAIN_B                 85
-#define WHITE_MAIN_R                236
+#define WHITE_MAIN_R                236                         /* WHITE (or off-white, in this case) is everything else */
 #define WHITE_MAIN_G                236
 #define WHITE_MAIN_B                236
 
-#define MAX_SAVE_SLOTS              9
+#define MAX_SAVE_SLOTS              9                           /* Would have to be passed in from app/emu on init */
 
 #define MAXPATHLEN                  512
 
-#undef X
-#define X(a, b) b,
-const char  *aspect_ratio_name[] = {ASPECT_RATIOS};
-unsigned int aspect_ratio_factor_step = 10;
-unsigned int aspect_ratio                   = ASPECT_RATIOS_TYPE_STRETCHED;
-unsigned int aspect_ratio_factor_percent    = 50;
-
 
 /// -------------- STATIC VARIABLES for menu --------------
-static int framelen = 16743;
-static int framecount;
+static int framelen = 16743;                                    /* UNUSED - Came from emu.c in gnuboy, can be overridden via .rc, don't know why they're here */
+static int framecount;                                          /* UNUSED - Came from emu.c in gnuboy, can be overridden via .rc, don't know why they're here */
 
 static int backup_key_repeat_delay, backup_key_repeat_interval;
 
@@ -119,12 +112,26 @@ static int quick_load_slot_chosen = 0;
 #define X(a, b) b,
 // const char *resume_options_str[] = {RESUME_OPTIONS};
 
+/* TODO - This was moved from configfile_fk.c, which still needs to be properly implemented
+          I should also brush on exactly what X Macros do... */
 
+#undef X
+#define X(a, b) b,
+const char  *aspect_ratio_name[] = {ASPECT_RATIOS};
+unsigned int aspect_ratio_factor_step       = 10;
+unsigned int aspect_ratio                   = ASPECT_RATIOS_TYPE_STRETCHED;
+unsigned int aspect_ratio_factor_percent    = 50;
 
+extern int saveslot;
 
 /// --------------------------------------------
 /// -------------  MENU functions  -------------
 /// --------------------------------------------
+
+/**
+ * Initialise the menu, loading ttf/image assets and pre-rendering all non-dynamic elements
+ */
+
 void init_menu_SDL(SDL_Surface* screen){
     MENU_DEBUG_PRINTF("Init Menu\n");
 
@@ -143,7 +150,7 @@ void init_menu_SDL(SDL_Surface* screen){
     }
 
     /// ----- Copy hw_screen at init ------
-    hw_screen = screen; /*vid_getwindow(); */
+    hw_screen = screen; /* = vid_getwindow();   CHANGE - Main screen passed in as param, rather than emu-specific global func */
 
     backup_hw_screen = SDL_CreateRGBSurface(SDL_SWSURFACE,
         hw_screen->w, hw_screen->h, 16, 0, 0, 0, 0);
@@ -426,7 +433,7 @@ void init_menu_system_values(){
     }
 
     /// Get save slot from game
-    //saveslot = 0; //(saveslot%MAX_SAVE_SLOTS); // security
+    saveslot = (saveslot%MAX_SAVE_SLOTS); // security
 }
 
 void menu_screen_refresh(int menuItem, int prevItem, int scroll, uint8_t menu_confirmation, uint8_t menu_action){
@@ -485,7 +492,7 @@ void menu_screen_refresh(int menuItem, int prevItem, int scroll, uint8_t menu_co
 
         case MENU_TYPE_SAVE:
             /// ---- Write slot -----
-            //sprintf(text_tmp, "IN SLOT   < %d >", saveslot+1);
+            sprintf(text_tmp, "IN SLOT   < %d >", saveslot+1);
             text_surface = TTF_RenderText_Blended(menu_info_font, text_tmp, text_color);
             text_pos.x = (draw_screen->w - MENU_ZONE_WIDTH)/2 + (MENU_ZONE_WIDTH - text_surface->w)/2;
             text_pos.y = draw_screen->h - MENU_ZONE_HEIGHT/2 - text_surface->h/2;
@@ -502,17 +509,18 @@ void menu_screen_refresh(int menuItem, int prevItem, int scroll, uint8_t menu_co
                 }
                 else{
                     /// ---- Write current Save state ----
-                    // if(check_savefile(-1, fname)){
-                    //     printf("Found Save slot: %s\n", fname);
-                    //     char *p = strrchr (fname, '/');
-                    //     char *basename = p ? p + 1 : (char *) fname;
-                    //     char file_name_short[24];
-                    //     snprintf(file_name_short, 24, "%s", basename);
-                    //     text_surface = TTF_RenderText_Blended(menu_small_info_font, file_name_short, text_color);
-                    // }
-                    // else{
-                    //     text_surface = TTF_RenderText_Blended(menu_info_font, "Free", text_color);
-                    // }
+            //      if(check_savefile(-1, fname)){
+            //          printf("Found Save slot: %s\n", fname);
+            //          char *p = strrchr (fname, '/');
+            //          char *basename = p ? p + 1 : (char *) fname;
+            //          char file_name_short[24];
+            //          snprintf(file_name_short, 24, "%s", basename);
+            //          text_surface = TTF_RenderText_Blended(menu_small_info_font, file_name_short, text_color);
+            //      }
+            //      else{
+            //          text_surface = TTF_RenderText_Blended(menu_info_font, "Free", text_color);
+            //      }
+                    text_surface = TTF_RenderText_Blended(menu_info_font, "IDK", text_color);
                 }
             }
             text_pos.x = (draw_screen->w - MENU_ZONE_WIDTH)/2 + (MENU_ZONE_WIDTH - text_surface->w)/2;
@@ -526,7 +534,7 @@ void menu_screen_refresh(int menuItem, int prevItem, int scroll, uint8_t menu_co
                 sprintf(text_tmp, "FROM AUTO SAVE");
             }
             else{
-                //sprintf(text_tmp, "FROM SLOT   < %d >", saveslot+1);
+                sprintf(text_tmp, "FROM SLOT   < %d >", saveslot+1);
             }
             text_surface = TTF_RenderText_Blended(menu_info_font, text_tmp, text_color);
             text_pos.x = (draw_screen->w - MENU_ZONE_WIDTH)/2 + (MENU_ZONE_WIDTH - text_surface->w)/2;
@@ -548,17 +556,18 @@ void menu_screen_refresh(int menuItem, int prevItem, int scroll, uint8_t menu_co
                     }
                     else{
                         /// ---- Write current Load state ----
-                        // if(check_savefile(-1, fname)){
-                        //     printf("Found Load slot: %s\n", fname);
-                        //     char *p = strrchr (fname, '/');
-                        //     char *basename = p ? p + 1 : (char *) fname;
-                        //     char file_name_short[24];
-                        //     snprintf(file_name_short, 24, "%s", basename);
-                        //     text_surface = TTF_RenderText_Blended(menu_small_info_font, file_name_short, text_color);
-                        // }
-                        // else{
-                        //     text_surface = TTF_RenderText_Blended(menu_info_font, "Free", text_color);
-                        // }
+                //      if(check_savefile(-1, fname)){
+                //          printf("Found Load slot: %s\n", fname);
+                //          char *p = strrchr (fname, '/');
+                //          char *basename = p ? p + 1 : (char *) fname;
+                //          char file_name_short[24];
+                //          snprintf(file_name_short, 24, "%s", basename);
+                //          text_surface = TTF_RenderText_Blended(menu_small_info_font, file_name_short, text_color);
+                //      }
+                //      else{
+                //          text_surface = TTF_RenderText_Blended(menu_info_font, "Free", text_color);
+                //      }
+                        text_surface = TTF_RenderText_Blended(menu_info_font, "IDK", text_color);
                     }
                 }
             }
@@ -614,8 +623,7 @@ void menu_screen_refresh(int menuItem, int prevItem, int scroll, uint8_t menu_co
     memcpy(hw_screen->pixels, draw_screen->pixels, hw_screen->h*hw_screen->w*sizeof(uint16_t));
 
     /// --------- Flip Screen ----------
-    //vid_flip()
-    SDL_Flip(hw_screen);
+    SDL_Flip(hw_screen); /* vid_flip(); */
 }
 
 
@@ -744,7 +752,7 @@ void run_menu_loop()
                         }
                         else if(idx_menus[menuItem] == MENU_TYPE_SAVE){
                             MENU_DEBUG_PRINTF("Save Slot DOWN\n");
-                            //saveslot = (!saveslot)?(MAX_SAVE_SLOTS-1):(saveslot-1);
+                            saveslot = (!saveslot)?(MAX_SAVE_SLOTS-1):(saveslot-1);
                             /// ------ Refresh screen ------
                             screen_refresh = 1;
                         }
@@ -752,18 +760,18 @@ void run_menu_loop()
                             MENU_DEBUG_PRINTF("Load Slot DOWN\n");
 
                             /** Choose quick save file or standard saveslot for loading */
-                            // if(!quick_load_slot_chosen &&
-                            //     saveslot == 0 &&
-                            //     access(quick_save_file, F_OK ) != -1){
-                            //     quick_load_slot_chosen = 1;
-                            // }
-                            // else if(quick_load_slot_chosen){
-                            //     quick_load_slot_chosen = 0;
-                            //     saveslot = MAX_SAVE_SLOTS-1;
-                            // }
-                            // else{
-                            //     saveslot = (!saveslot)?(MAX_SAVE_SLOTS-1):(saveslot-1);
-                            // }
+                             if(!quick_load_slot_chosen &&
+                                 saveslot == 0 /* &&
+                                 access(quick_save_file, F_OK ) != -1 */){      /* CHANGE - Assume it always exists for now */
+                                 quick_load_slot_chosen = 1;
+                             }
+                             else if(quick_load_slot_chosen){
+                                 quick_load_slot_chosen = 0;
+                                 saveslot = MAX_SAVE_SLOTS-1;
+                             }
+                             else{
+                                 saveslot = (!saveslot)?(MAX_SAVE_SLOTS-1):(saveslot-1);
+                             }
 
                             /// ------ Refresh screen ------
                             screen_refresh = 1;
@@ -811,7 +819,7 @@ void run_menu_loop()
                         }
                         else if(idx_menus[menuItem] == MENU_TYPE_SAVE){
                             MENU_DEBUG_PRINTF("Save Slot UP\n");
-                            //saveslot = (saveslot+1)%MAX_SAVE_SLOTS;
+                            saveslot = (saveslot+1)%MAX_SAVE_SLOTS;
                             /// ------ Refresh screen ------
                             screen_refresh = 1;
                         }
@@ -819,18 +827,18 @@ void run_menu_loop()
                             MENU_DEBUG_PRINTF("Load Slot UP\n");
 
                             /** Choose quick save file or standard saveslot for loading */
-                            // if(!quick_load_slot_chosen &&
-                            //     saveslot == MAX_SAVE_SLOTS-1 &&
-                            //     access(quick_save_file, F_OK ) != -1){
-                            //     quick_load_slot_chosen = 1;
-                            // }
-                            // else if(quick_load_slot_chosen){
-                            //     quick_load_slot_chosen = 0;
-                            //     saveslot = 0;
-                            // }
-                            // else{
-                            //     saveslot = (saveslot+1)%MAX_SAVE_SLOTS;
-                            // }
+                            if(!quick_load_slot_chosen &&
+                                saveslot == MAX_SAVE_SLOTS-1 /* &&
+                                access(quick_save_file, F_OK ) != -1 */){      /* CHANGE - Assume it always exists for now */
+                                quick_load_slot_chosen = 1;
+                            }
+                            else if(quick_load_slot_chosen){
+                                quick_load_slot_chosen = 0;
+                                saveslot = 0;
+                            }
+                            else{
+                                saveslot = (saveslot+1)%MAX_SAVE_SLOTS;
+                            }
 
                             /// ------ Refresh screen ------
                             screen_refresh = 1;
@@ -858,8 +866,8 @@ void run_menu_loop()
                                 //state_save(-1);
 
                                 /// ----- Hud Msg -----
-                                //sprintf(shell_cmd, "%s %d \"        SAVED IN SLOT %d\"",
-                                //    SHELL_CMD_NOTIF_SET, NOTIF_SECONDS_DISP, saveslot+1);
+                                sprintf(shell_cmd, "%s %d \"        SAVED IN SLOT %d\"",
+                                    SHELL_CMD_NOTIF_SET, NOTIF_SECONDS_DISP, saveslot+1);
                                 system(shell_cmd);
                                 stop_menu_loop = 1;
                             }
@@ -877,12 +885,12 @@ void run_menu_loop()
                                 menu_screen_refresh(menuItem, prevItem, scroll, menu_confirmation, 1);
 
                                 /// ------ Load game ------
-                                //if(quick_load_slot_chosen){
-                                //    state_file_load(quick_save_file);
-                                //}
-                                //else{
-                                //    state_load(-1);
-                                //}
+                                if(quick_load_slot_chosen){
+                        //          state_file_load(quick_save_file);
+                                }
+                                else{
+                        //          state_load(-1);
+                                }
 
                                 /// ----- Hud Msg -----
                                 if(quick_load_slot_chosen){
@@ -890,8 +898,8 @@ void run_menu_loop()
                                         SHELL_CMD_NOTIF_SET, NOTIF_SECONDS_DISP);
                                 }
                                 else{
-                                //    sprintf(shell_cmd, "%s %d \"      LOADED FROM SLOT %d\"",
-                                //        SHELL_CMD_NOTIF_SET, NOTIF_SECONDS_DISP, saveslot+1);
+                                    sprintf(shell_cmd, "%s %d \"      LOADED FROM SLOT %d\"",
+                                        SHELL_CMD_NOTIF_SET, NOTIF_SECONDS_DISP, saveslot+1);
                                 }
                                 system(shell_cmd);
                                 stop_menu_loop = 1;
@@ -909,7 +917,7 @@ void run_menu_loop()
                                 MENU_DEBUG_PRINTF("Exit game - confirmed\n");
 
                                 /// ----- The game should be saved here ----
-                                //state_file_save(quick_save_file);
+                        //      state_file_save(quick_save_file);
 
                                 /// ----- Exit game and back to launcher ----
                                 exit(0);
