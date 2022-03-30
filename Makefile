@@ -10,7 +10,7 @@ DEPS := $(OBJS:.o=.d)
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS := -D_DEFAULT_SOURCE $(INC_FLAGS) -MMD -MP
+CXXFLAGS := -D_DEFAULT_SOURCE $(INC_FLAGS) -MMD -MP
 LDFLAGS := -lSDL -lSDL_image -lSDL_ttf
 
 # Link executable
@@ -20,7 +20,7 @@ $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 # Compile source
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) -c $< -o $@
+	$(CC) $(CXXFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:
