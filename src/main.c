@@ -5,6 +5,8 @@
 
 #include "funkey/sdl-menu.h"
 
+#define FPS_GAME 50
+
 // Global Variable
 int should_quick_save = 0;
 
@@ -40,6 +42,8 @@ int main(int argc, char *argv[])
 
     int quit_main_loop = 0;
     SDL_Event event;
+    uint32_t prev_ms = SDL_GetTicks();
+    uint32_t cur_ms = SDL_GetTicks();
 
 	/* Init USR1 Signal (for quick save and poweroff) */
 	signal(SIGUSR1, handle_sigusr1);
@@ -91,6 +95,16 @@ int main(int argc, char *argv[])
                     break; 
             }
         }
+
+        // Limit frame rate
+        cur_ms = SDL_GetTicks();
+        if(cur_ms-prev_ms < 1000/FPS_GAME){
+            SDL_Delay(1000/FPS_GAME - (cur_ms-prev_ms));
+        }
+        prev_ms = SDL_GetTicks();
+
+        // Clear screen
+        SDL_FillRect(hw_surface, NULL, 0x000000);
 
         // Draw a green square
         SDL_Rect draw_rect = {.x=70, .y=70, .w=100, .h=100};
