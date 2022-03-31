@@ -80,9 +80,9 @@ static int framecount;                                          /* UNUSED - Came
 
 static int backup_key_repeat_delay, backup_key_repeat_interval;
 
-static SDL_Surface *hw_screen = NULL;
-static SDL_Surface * backup_hw_screen = NULL;
-static SDL_Surface * draw_screen = NULL;
+static SDL_Surface *hw_screen = NULL;                           /* Pointer to main emu/app SDL_Surface (what it was rendering before menu started) */
+static SDL_Surface * backup_hw_screen = NULL;                   
+static SDL_Surface * draw_screen = NULL;                        
 static TTF_Font *menu_title_font = NULL;
 static TTF_Font *menu_info_font = NULL;
 static TTF_Font *menu_small_info_font = NULL;
@@ -153,13 +153,13 @@ void init_menu_SDL(SDL_Surface* screen){
     hw_screen = screen; /* = vid_getwindow();   CHANGE - Main screen passed in as param, rather than emu-specific global func */
 
     backup_hw_screen = SDL_CreateRGBSurface(SDL_SWSURFACE,
-        hw_screen->w, hw_screen->h, 16, 0, 0, 0, 0);
+        hw_screen->w, hw_screen->h, hw_screen->format->BitsPerPixel, 0, 0, 0, 0);
     if(backup_hw_screen == NULL){
         MENU_ERROR_PRINTF("ERROR in init_menu_SDL: Could not create backup_hw_screen: %s\n", SDL_GetError());
     }
 
     draw_screen = SDL_CreateRGBSurface(SDL_SWSURFACE,
-        hw_screen->w, hw_screen->h, 16, 0, 0, 0, 0);
+        hw_screen->w, hw_screen->h, hw_screen->format->BitsPerPixel, 0, 0, 0, 0);
     if(draw_screen == NULL){
         MENU_ERROR_PRINTF("ERROR Could not create draw_screen: %s\n", SDL_GetError());
     }
@@ -620,7 +620,7 @@ void menu_screen_refresh(int menuItem, int prevItem, int scroll, uint8_t menu_co
     }
 
     /// ---- Fast blit ----
-    memcpy(hw_screen->pixels, draw_screen->pixels, hw_screen->h*hw_screen->w*sizeof(uint16_t));
+    memcpy(hw_screen->pixels, draw_screen->pixels, hw_screen->h * hw_screen->w * hw_screen->format->BytesPerPixel);
 
     /// --------- Flip Screen ----------
     SDL_Flip(hw_screen); /* vid_flip(); */
@@ -1036,12 +1036,12 @@ void run_menu_loop()
 //     if(!img_square_bg) {
 //         MENU_ERROR_PRINTF("ERROR IMG_Load: %s\n", IMG_GetError());
 //     }
-//     SDL_Surface *bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, hw_screen->w, hw_screen->h, 16, 0, 0, 0, 0);
+//     SDL_Surface *bg_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, hw_screen->w, hw_screen->h, hw_screen->format->BitsPerPixel, 0, 0, 0, 0);
 //     SDL_BlitSurface(img_square_bg, NULL, bg_surface, NULL);
 //     SDL_FreeSurface(img_square_bg);
 
 //     draw_screen = SDL_CreateRGBSurface(SDL_SWSURFACE,
-//         hw_screen->w, hw_screen->h, 16, 0, 0, 0, 0);
+//         hw_screen->w, hw_screen->h, hw_screen->format->BitsPerPixel, 0, 0, 0, 0);
 //     if(draw_screen == NULL){
 //         MENU_ERROR_PRINTF("ERROR Could not create draw_screen: %s\n", SDL_GetError());
 //     }
@@ -1174,7 +1174,7 @@ void run_menu_loop()
 //             }
 
 //             /// ---- Fast blit ----
-//             memcpy(hw_screen->pixels, draw_screen->pixels, hw_screen->h*hw_screen->w*sizeof(uint16_t));
+//             memcpy(hw_screen->pixels, draw_screen->pixels, hw_screen->h * hw_screen->w * hw_screen->format->BytesPerPixel);
 
 //             /// --------- Flip Screen ----------
 //             vid_flip();
